@@ -1,0 +1,48 @@
+ASV abundance matrix manifest
+=============================
+
+Source
+------
+Newly uploaded ASV count matrix, normalized from UTF-16LE text to UTF-8 TSV.
+
+Dimensions
+----------
+ASVs: 24,122
+Samples: 18
+Data columns: non-negative integer sequence counts
+Missing values: 0
+Duplicate ASV identifiers: 0
+Zero-depth samples: 0
+
+Sample order
+------------
+RSV1, RSV2, RSV3, RRV1, RRV2, RRV3,
+SSV1, SSV2, SSV3, SRV1, SRV2, SRV3,
+ESV1, ESV2, ESV3, ERV1, ERV2, ERV3
+
+Sequencing depth
+----------------
+Each sample contains exactly 31,556 reads.
+
+Repository storage
+------------------
+The matrix is encoded losslessly in ASVC1 sparse column-oriented varint format,
+compressed with XZ and Base64 encoded across four files:
+
+- asv_counts.compact.b64.part001
+- asv_counts.compact.b64.part002
+- asv_counts.compact.b64.part003
+- asv_counts.compact.b64.part004
+
+R/00_restore_abundance.R reconstructs data/asv_abundance.tsv automatically.
+
+Integrity values
+----------------
+Restored UTF-8 TSV SHA-256:
+ae2cf9ddeeb76bb1d6d0a2e6d3011c5ea52f6e55a8547c1f65acb8489a7683e1
+
+ASVC1 binary SHA-256:
+6e2af0d3bb5e567a5e9e5d24a590d2298f629aa160910c33cfb196f7b921f1a8
+
+XZ-compressed archive SHA-256:
+8d6250bd9e03786bd85804e952196d491a6c670c0774f7fab3c2ec4319b560d0
