@@ -1,0 +1,47 @@
+Figure 3 uploaded-input manifest
+===============================
+
+Uploaded files
+--------------
+1. Sample grouping table
+   Rows: 18 samples
+   Groups: RSV, RRV, SSV, SRV, ESV, ERV
+   SHA-256 after UTF-8 TSV normalization:
+   bb805cb2550d90dba85a677cf6da01b20e4b1264dcb3e3a9c59363128506cf73
+
+2. Full taxonomy table
+   Rows: 24,122 ASVs
+   Columns: #ID, phylum, class, order, family, genus, species
+   Duplicate #ID values: 0
+   SHA-256 after UTF-8 TSV normalization:
+   9caae09109570e3fc08d6615feec5ef761729522baa637359fe39e0c466bbde1
+
+   Figure 3 uses the #ID and family columns. The family-level table contains
+   365 unique labels and is stored in the TAXF1 compact archive.
+   Family-level UTF-8 TSV SHA-256:
+   50969ad23e40e95aaddd024a65821905d46f2bce776034a036893fc59110dfa9
+   TAXF1 binary SHA-256:
+   fdac00b7f925f8301073b13fb973195672a77f9dd7fca128d2787051d85a0cd8
+   XZ-compressed TAXF1 SHA-256:
+   5b8ce7a595898db9dd73c8eca104a51e1de0975bd16d3e4086d59cdc0425ecb5
+
+3. ASV abundance matrix
+   Rows: 24,122 ASVs
+   Samples: 18
+   Missing values: 0
+   Negative values: 0
+   Duplicate #ID values: 0
+   Sequencing depth: 31,556 reads for every sample
+   SHA-256 after UTF-8 TSV normalization:
+   ae2cf9ddeeb76bb1d6d0a2e6d3011c5ea52f6e55a8547c1f65acb8489a7683e1
+
+Cross-file validation
+---------------------
+- Taxonomy and abundance ASV IDs match exactly: 24,122 shared IDs.
+- All 18 grouping-table sample IDs are present in the abundance matrix.
+- The abundance file is identical to the previously archived matrix in this repository.
+
+Restoration
+-----------
+- R/00_restore_abundance.R reconstructs data/asv_abundance.tsv.
+- R/00_restore_taxonomy.R reconstructs data/taxonomy.tsv at family level.
