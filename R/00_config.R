@@ -13,6 +13,10 @@ PATHS <- list(
   abundance = file.path(DATA_DIR, "asv_abundance.tsv")
 )
 
+# Reconstruct data/asv_abundance.tsv automatically when only the compact
+# archive parts are present in the cloned GitHub repository.
+source(file.path(PROJECT_DIR, "R", "00_restore_abundance.R"))
+
 # The uploaded sample codes occur as paired groups: RSV/RRV, SSV/SRV, ESV/ERV.
 # This project interprets the second character as compartment:
 # S = Rhizosphere, R = Root. Change sample_metadata.tsv if this is not correct.
