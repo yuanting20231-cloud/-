@@ -38,7 +38,7 @@ make_fig3c_driver_upset <- function(netshift_result) {
   ) %>%
     filter(grepl("1", Pattern, fixed = TRUE))
 
-  combination_table <- taxon_patterns %>%
+  combination_table_all <- taxon_patterns %>%
     group_by(Pattern) %>%
     summarise(
       IntersectionSize = n(),
@@ -46,8 +46,11 @@ make_fig3c_driver_upset <- function(netshift_result) {
       .groups = "drop"
     ) %>%
     mutate(NumberOfSets = stringr::str_count(Pattern, "1")) %>%
-    arrange(desc(IntersectionSize), desc(NumberOfSets), Pattern) %>%
-    slice_head(n = min(UPSET_MAX_COMBINATIONS, n())) %>%
+    arrange(desc(IntersectionSize), desc(NumberOfSets), Pattern)
+
+  keep_n <- min(UPSET_MAX_COMBINATIONS, nrow(combination_table_all))
+  combination_table <- combination_table_all %>%
+    slice_head(n = keep_n) %>%
     mutate(
       ComboIndex = row_number(),
       Combination = paste0("C", ComboIndex)
@@ -102,7 +105,9 @@ make_fig3c_driver_upset <- function(netshift_result) {
   highlighted <- combination_table %>% filter(Highlight) %>% slice_head(n = 1)
   highlighted_taxa <- strsplit(highlighted$Taxa, "; ", fixed = TRUE)[[1]]
   highlighted_label <- paste(head(highlighted_taxa, 5), collapse = "\n")
-  if (length(highlighted_taxa) > 5) highlighted_label <- paste0(highlighted_label, "\n...")
+  if (length(highlighted_taxa) > 5) {
+    highlighted_label <- paste0(highlighted_label, "\n...")
+  }
 
   max_intersection <- max(combination_table$IntersectionSize)
   p_top <- ggplot(combination_table, aes(x = ComboIndex, y = IntersectionSize)) +
@@ -113,9 +118,9 @@ make_fig3c_driver_upset <- function(netshift_result) {
       data = highlighted,
       aes(
         x = ComboIndex,
-        y = IntersectionSize + max(0.6, max_intersection * 0.18),
-        label = highlighted_label
+        y = IntersectionSize + max(0.6, max_intersection * 0.18)
       ),
+      label = highlighted_label,
       inherit.aes = FALSE,
       hjust = 0,
       vjust = 0,
@@ -170,7 +175,13 @@ make_fig3c_driver_upset <- function(netshift_result) {
     )
 
   p_set <- ggplot(set_sizes, aes(x = SetSize, y = SetY)) +
-    geom_col(orientation = "y", width = 0.62, fill = "#BDBDBD", colour = "#7F7F7F", linewidth = 0.25) +
+    geom_col(
+      orientation = "y",
+      width = 0.62,
+      fill = "#BDBDBD",
+      colour = "#7F7F7F",
+      linewidth = 0.25
+    ) +
     geom_text(aes(label = SetSize), hjust = 1.15, size = 2.7) +
     scale_x_reverse(expand = expansion(mult = c(0.08, 0.18))) +
     scale_y_continuous(
@@ -190,8 +201,14 @@ make_fig3c_driver_upset <- function(netshift_result) {
     (p_set | p_matrix) +
     patchwork::plot_layout(widths = c(0.28, 1), heights = c(0.68, 0.32))
 
-  readr::write_csv(membership_long, file.path(OUTPUT_DIR, "Figure3c_driver_set_membership.csv"))
-  readr::write_csv(combination_table, file.path(OUTPUT_DIR, "Figure3c_driver_intersections.csv"))
+  readr::write_csv(
+    membership_long,
+    file.path(OUTPUT_DIR, "Figure3c_driver_set_membership.csv")
+  )
+  readr::write_csv(
+    combination_table,
+    file.path(OUTPUT_DIR, "Figure3c_driver_intersections.csv")
+  )
 
   list(
     plot = plot,
