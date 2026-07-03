@@ -52,7 +52,9 @@ select_network_taxa <- function(count_matrix, sample_ids, top_n = NETWORK_TOP_N,
                                 min_prevalence = NETWORK_MIN_PREVALENCE,
                                 require_present_in = NULL) {
   x <- count_matrix[sample_ids, , drop = FALSE]
-  if (nrow(x) == 0 || ncol(x) == 0) stop("No samples or taxa available for network selection.", call. = FALSE)
+  if (nrow(x) == 0 || ncol(x) == 0) {
+    stop("No samples or taxa available for network selection.", call. = FALSE)
+  }
 
   prevalence <- colMeans(x > 0)
   rel <- sweep(x, 1, pmax(rowSums(x), 1), "/")
@@ -144,7 +146,8 @@ build_association_network <- function(count_matrix, taxa, group_label = "network
   selected <- candidate_pool %>% filter(abs_correlation >= threshold)
 
   if (nrow(selected) < NETWORK_MIN_EDGES) {
-    selected <- candidate_pool %>% slice_head(n = min(NETWORK_MIN_EDGES, nrow(candidate_pool)))
+    selected <- candidate_pool %>%
+      slice_head(n = min(NETWORK_MIN_EDGES, nrow(candidate_pool)))
   }
   if (nrow(selected) > NETWORK_MAX_EDGES) {
     selected <- selected %>% slice_head(n = NETWORK_MAX_EDGES)
@@ -172,19 +175,24 @@ edge_key_table <- function(graph) {
   if (igraph::ecount(graph) == 0) {
     return(tibble(from = character(), to = character(), key = character()))
   }
-  edges <- igraph::as_data_frame(graph, what = "edges") %>%
-    transmute(
-      from = pmin(as.character(from), as.character(to)),
-      to = pmax(as.character(from), as.character(to))
-    ) %>%
+
+  raw_edges <- igraph::as_data_frame(graph, what = "edges")
+  from_raw <- as.character(raw_edges$from)
+  to_raw <- as.character(raw_edges$to)
+
+  tibble(
+    from = pmin(from_raw, to_raw),
+    to = pmax(from_raw, to_raw)
+  ) %>%
     distinct(from, to) %>%
     mutate(key = paste(from, to, sep = "||"))
-  edges
 }
 
 induce_common_nodes <- function(graph_a, graph_b) {
   common <- intersect(igraph::V(graph_a)$name, igraph::V(graph_b)$name)
-  if (length(common) < 3) stop("The two networks have fewer than three common taxa.", call. = FALSE)
+  if (length(common) < 3) {
+    stop("The two networks have fewer than three common taxa.", call. = FALSE)
+  }
   list(
     a = igraph::induced_subgraph(graph_a, vids = common),
     b = igraph::induced_subgraph(graph_b, vids = common)
@@ -220,8 +228,18 @@ calculate_netshift <- function(control_graph, case_graph, comparison_id, compart
   degree_case <- igraph::degree(case_graph, v = nodes)
   max_degree_case <- max(c(degree_case, 1))
 
-  control_bet <- igraph::betweenness(control_graph, v = nodes, directed = FALSE, normalized = TRUE)
-  case_bet <- igraph::betweenness(case_graph, v = nodes, directed = FALSE, normalized = TRUE)
+  control_bet <- igraph::betweenness(
+    control_graph,
+    v = nodes,
+    directed = FALSE,
+    normalized = TRUE
+  )
+  case_bet <- igraph::betweenness(
+    case_graph,
+    v = nodes,
+    directed = FALSE,
+    normalized = TRUE
+  )
   control_bet_scaled <- safe_scale01(control_bet)
   case_bet_scaled <- safe_scale01(case_bet)
 
@@ -263,19 +281,25 @@ calculate_netshift <- function(control_graph, case_graph, comparison_id, compart
     mutate(Driver = DeltaBetweenness > 0 & NESH >= NESH_DRIVER_MIN)
 
   if (!any(node_stats$Driver)) {
-    fallback <- node_stats %>%
+    fallback_candidates <- node_stats %>%
       filter(DeltaBetweenness > 0) %>%
-      arrange(desc(NESH), desc(DeltaBetweenness)) %>%
-      slice_head(n = min(NESH_FALLBACK_TOP_N, n())) %>%
-      pull(Taxon)
-    if (length(fallback) == 0) {
-      fallback <- node_stats %>%
-        arrange(desc(NESH), desc(DeltaBetweenness)) %>%
-        slice_head(n = min(NESH_FALLBACK_TOP_N, n())) %>%
-        pull(Taxon)
+      arrange(desc(NESH), desc(DeltaBetweenness))
+
+    if (nrow(fallback_candidates) == 0) {
+      fallback_candidates <- node_stats %>%
+        arrange(desc(NESH), desc(DeltaBetweenness))
     }
+
+    fallback_n <- min(NESH_FALLBACK_TOP_N, nrow(fallback_candidates))
+    fallback <- fallback_candidates %>%
+      slice_head(n = fallback_n) %>%
+      pull(Taxon)
+
     node_stats$Driver <- node_stats$Taxon %in% fallback
-    warning(comparison_id, " ", compartment, ": no taxa met the formal driver rule; top taxa were highlighted as fallback.")
+    warning(
+      comparison_id, " ", compartment,
+      ": no taxa met the formal driver rule; top taxa were highlighted as fallback."
+    )
   }
 
   membership <- rep(1L, length(nodes))
@@ -283,7 +307,9 @@ calculate_netshift <- function(control_graph, case_graph, comparison_id, compart
   if (igraph::ecount(case_graph) > 0) {
     case_for_cluster <- case_graph
     igraph::E(case_for_cluster)$weight <- 1
-    membership <- igraph::membership(igraph::cluster_louvain(case_for_cluster, weights = NULL))
+    membership <- igraph::membership(
+      igraph::cluster_louvain(case_for_cluster, weights = NULL)
+    )
   }
 
   node_stats <- node_stats %>%
@@ -332,15 +358,23 @@ simulate_random_removal <- function(graph, proportions = ROBUSTNESS_REMOVAL_PROP
   if (n0 < 3) stop("Network robustness requires at least three nodes.", call. = FALSE)
   denominator <- n0 * (n0 - 1)
 
-  out <- lapply(proportions, function(prop) {
+  lapply(proportions, function(prop) {
     remove_n <- min(floor(prop * n0), n0 - 1L)
     reps <- if (remove_n == 0) 1L else iterations
 
     lapply(seq_len(reps), function(iteration) {
-      removed <- if (remove_n == 0) character() else sample(igraph::V(graph)$name, remove_n)
+      removed <- if (remove_n == 0) {
+        character()
+      } else {
+        sample(igraph::V(graph)$name, remove_n)
+      }
       reduced <- igraph::delete_vertices(graph, removed)
-      components <- if (igraph::vcount(reduced) > 0) igraph::components(reduced)$csize else 0
-      largest_component <- if (length(components) == 0) 0 else max(components)
+      component_sizes <- if (igraph::vcount(reduced) > 0) {
+        igraph::components(reduced)$csize
+      } else {
+        numeric()
+      }
+      largest_component <- if (length(component_sizes) == 0) 0 else max(component_sizes)
 
       tibble(
         RemovalRatio = prop,
@@ -352,8 +386,6 @@ simulate_random_removal <- function(graph, proportions = ROBUSTNESS_REMOVAL_PROP
       )
     }) %>% bind_rows()
   }) %>% bind_rows()
-
-  out
 }
 
 format_p_value <- function(p) {
@@ -365,7 +397,11 @@ format_p_value <- function(p) {
 plot_netshift_network <- function(result, show_legend = TRUE) {
   graph <- result$union_graph
   if (igraph::vcount(graph) == 0) {
-    return(ggplot() + theme_void() + labs(title = paste(result$compartment, result$case_label, "vs", result$control_label)))
+    return(
+      ggplot() +
+        theme_void() +
+        labs(title = paste(result$compartment, result$case_label, "vs", result$control_label))
+    )
   }
 
   layout <- ggraph::create_layout(graph, layout = "linear", circular = TRUE)
@@ -378,7 +414,7 @@ plot_netshift_network <- function(result, show_legend = TRUE) {
   layout$label_x <- layout$x * 1.16
   layout$label_y <- layout$y * 1.16
 
-  p <- ggraph::ggraph(layout) +
+  ggraph::ggraph(layout) +
     ggraph::geom_edge_arc(
       aes(edge_colour = edge_class),
       strength = 0.86,
@@ -397,7 +433,10 @@ plot_netshift_network <- function(result, show_legend = TRUE) {
       stroke = 0.25
     ) +
     scale_size_continuous(range = c(1.5, 5.5), name = "NESH") +
-    scale_colour_manual(values = c(`TRUE` = "#D73027", `FALSE` = "#222222"), guide = "none") +
+    scale_colour_manual(
+      values = c(`TRUE` = "#D73027", `FALSE` = "#222222"),
+      guide = "none"
+    ) +
     geom_text(
       data = layout,
       aes(
@@ -429,6 +468,4 @@ plot_netshift_network <- function(result, show_legend = TRUE) {
       plot.margin = margin(14, 26, 14, 26),
       legend.position = if (show_legend) "bottom" else "none"
     )
-
-  p
 }
