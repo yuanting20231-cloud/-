@@ -29,7 +29,7 @@ microbiome_fig2_code/
 │   ├── 02_panel_b_pcoa.R
 │   ├── 03_panel_c_family_composition.R
 │   ├── 04_panel_d_rhizosphere_differential.R
-│   └── 05_panel_e_root_differential.R
+│   └── 05_panel_e_root.R
 ├── install_packages.R
 └── run_all.R
 ```
