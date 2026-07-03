@@ -57,9 +57,9 @@ save_plot(
   4.8
 )
 
-left_column <- figure3a$plot / figure3c$plot +
+left_column <- (figure3a$plot / figure3c$plot) +
   patchwork::plot_layout(heights = c(0.70, 0.30))
-combined <- left_column | figure3b$plot +
+combined <- (left_column | figure3b$plot) +
   patchwork::plot_layout(widths = c(0.34, 0.66))
 
 save_plot(
@@ -76,4 +76,7 @@ save_plot(
 )
 
 capture.output(sessionInfo(), file = file.path(OUTPUT_DIR, "Figure3_sessionInfo.txt"))
-message("Figure 3 finished. Results are in: ", normalizePath(OUTPUT_DIR, winslash = "/", mustWork = FALSE))
+message(
+  "Figure 3 finished. Results are in: ",
+  normalizePath(OUTPUT_DIR, winslash = "/", mustWork = FALSE)
+)
