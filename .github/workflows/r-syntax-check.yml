@@ -42,10 +42,12 @@ jobs:
           needs: check
           cache-version: 1
       - name: Run Figure 3
+        continue-on-error: true
         shell: Rscript {0}
         run: |
           source("run_figure3.R")
       - name: Upload Figure 3 outputs
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: figure3-results
