@@ -1,10 +1,13 @@
-name: R syntax check
+name: Code validation and Figure 3
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
   parse-r-files:
@@ -23,3 +26,26 @@ jobs:
             parse(file = file)
           }
           message("All R files parsed successfully.")
+
+  run-figure3-python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy pandas networkx matplotlib scikit-learn scipy pillow
+      - name: Run Figure 3 from uploaded data
+        run: bash python/run_figure3.sh
+      - name: Verify generated figures
+        run: |
+          test -s output/Figure3a_network_robustness.png
+          test -s output/Figure3b_netshift.png
+          test -s output/Figure3c_driver_upset.png
+          test -s output/Figure3_combined.png
+          test -s output/Figure3b_driver_taxa.csv
+          find output -maxdepth 1 -type f -printf '%f\t%s bytes\n' | sort
