@@ -11,19 +11,23 @@ This repository contains reproducible R code for the five graph modules in the s
 ## Uploaded files checked
 
 - The sample grouping file contains 18 samples and six groups: `RSV`, `RRV`, `SSV`, `SRV`, `ESV`, and `ERV`, with three replicates per group.
-- The two uploaded large text files are byte-for-byte identical taxonomy tables, containing `#ID`, phylum, class, order, family, genus, and species columns.
-- An ASV/OTU abundance table was not included. The analyses cannot calculate Chao1, Bray–Curtis distances, family proportions, or differential abundance until this table is supplied.
+- The two previously uploaded large text files are identical taxonomy tables containing `#ID`, phylum, class, order, family, genus, and species columns.
+- The newly uploaded ASV abundance matrix has been added to this repository. It contains **24,122 ASVs × 18 samples**, has no missing or negative values, and each sample contains **31,556 reads**.
 
-## Required directory structure
+## Repository structure
 
 ```text
 microbiome_fig2_code/
 ├── data/
 │   ├── sample_metadata.tsv
-│   ├── taxonomy.tsv
-│   └── asv_abundance.tsv
+│   ├── taxonomy.tsv                         # copy the taxonomy table here
+│   ├── asv_counts.compact.b64.part001       # uploaded abundance matrix archive
+│   ├── asv_counts.compact.b64.part002
+│   ├── asv_counts.compact.b64.part003
+│   └── asv_counts.compact.b64.part004
 ├── R/
 │   ├── 00_config.R
+│   ├── 00_restore_abundance.R               # automatically creates asv_abundance.tsv
 │   ├── 00_helpers.R
 │   ├── 01_panel_a_chao1.R
 │   ├── 02_panel_b_pcoa.R
@@ -34,19 +38,19 @@ microbiome_fig2_code/
 └── run_all.R
 ```
 
-## Prepare the input files
+## Input data
 
 ### 1. Metadata
 
 `data/sample_metadata.tsv` has already been prepared from the uploaded grouping file.
 
-The default interpretation is:
+The current working interpretation is:
 
 - second character `S` = `Rhizosphere`
 - second character `R` = `Root`
 - first character `R`, `S`, or `E` = treatment identity
 
-This is an explicit working assumption because the uploaded file contains only `Sample` and `Group`. Correct `Treatment` or `Compartment` directly in `sample_metadata.tsv` when the biological meanings differ.
+This is an explicit working assumption because the grouping file contains only `Sample` and `Group`. Correct `Treatment` or `Compartment` directly in `sample_metadata.tsv` when the biological meanings differ.
 
 ### 2. Taxonomy
 
@@ -56,25 +60,17 @@ Copy either one of the two identical uploaded taxonomy files to:
 data/taxonomy.tsv
 ```
 
-The first column must be `#ID`, and the file must contain a `family` column.
+The first column must be `#ID`, and the file must contain a `family` column. Panels c–e require this file.
 
-### 3. ASV abundance table
+### 3. ASV abundance matrix
 
-Create:
+The uploaded abundance matrix is stored losslessly in four compact archive parts. When `R/00_config.R` is sourced, `R/00_restore_abundance.R` automatically reconstructs:
 
 ```text
 data/asv_abundance.tsv
 ```
 
-Format: ASVs in rows and samples in columns.
-
-```text
-#ID    RSV1    RSV2    ...    ERV3
-ASV 1  120     98             14
-ASV 2  0       4              83
-```
-
-A header-only template is provided as `data/asv_abundance_template.tsv`.
+The restored table has ASVs in rows, samples in columns, and non-negative integer read counts as cell values. No manual conversion is required.
 
 ## Run
 
@@ -85,7 +81,7 @@ source("install_packages.R")
 source("run_all.R")
 ```
 
-All PNG and PDF outputs are written to `output/`.
+The first run reconstructs `data/asv_abundance.tsv` automatically. All PNG and PDF outputs are written to `output/`.
 
 ## Comparisons for panels d and e
 
@@ -98,7 +94,7 @@ Edit `COMPARISONS` in `R/00_config.R` if another treatment should be the referen
 
 ## Statistical methods
 
-- Panel a: Chao1 estimated with `vegan::estimateR`; Kruskal–Wallis-compatible Dunn post hoc grouping letters with BH correction.
+- Panel a: Chao1 estimated with `vegan::estimateR`; Dunn post hoc grouping letters with BH correction.
 - Panel b: Bray–Curtis dissimilarity, Lingoes-corrected PCoA, and PERMANOVA with 999 permutations.
 - Panels d/e: family-level relative abundance; equal-variance Student's t-test; unadjusted P values displayed to reproduce the reference layout; BH-adjusted values retained in the internal results table.
 
