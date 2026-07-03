@@ -1,0 +1,26 @@
+Package: microbiomefigures
+Type: Project
+Title: Microbiome Figure Workflows
+Version: 0.1.0
+Authors@R: person("Project", "Author", email = "noreply@example.com", role = c("aut", "cre"))
+Description: Reproducible scripts for alpha diversity, ordination, family composition,
+    network robustness and NetShift-style microbiome figures.
+License: MIT
+Encoding: UTF-8
+Imports:
+    base64enc,
+    corpcor,
+    dplyr,
+    FSA,
+    ggraph,
+    ggplot2,
+    igraph,
+    multcompView,
+    patchwork,
+    readr,
+    scales,
+    stringr,
+    tibble,
+    tidyr,
+    tidygraph,
+    vegan
